@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  # 1. PostgreSQL 17 database
+  db:
+    image: postgres:17-alpine
+    container_name: inven_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-inven_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-Xk9#mPv2_wLq8nR4}
+      POSTGRES_DB: ${POSTGRES_DB:-inven_report_db}
+    ports:
+      - "6009:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # 2. MinIO S3-compatible storage
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: inven_minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio_admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-Zt7@hNc5!bYf3jW9}
+    ports:
+      - "6007:9000" # MinIO API
+      - "6008:9001" # MinIO Console
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
+  # 3. Sidecar container to auto-create bucket in MinIO on startup
+  minio-init:
+    image: quay.io/minio/mc:latest
+    container_name: inven_minio_init
+    depends_on:
+      - minio
+    entrypoint: |
+      /bin/sh -c "
+      sleep 3;
+      mc alias set localminio http://minio:9000 minio_admin Zt7_hNc5_bYf3jW9_safe;
+      if ! mc ls localminio/storage-bucket >/dev/null 2>&1; then
+        mc mb localminio/storage-bucket;
+        mc anonymous set public localminio/storage-bucket;
+        echo 'Bucket storage-bucket created successfully.';
+      else
+        echo 'Bucket storage-bucket already exists.';
+      fi;
+      exit 0;
+      "
+
+  # 4. Nginx Reverse Proxy (Development Routing)
+  proxy:
+    image: nginx:alpine
+    container_name: inven_proxy
+    restart: unless-stopped
+    ports:
+      - "6006:6006"
+    volumes:
+      - ./nginx/dev.conf:/etc/nginx/nginx.conf:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - db
+      - minio
+
+  # 5. Pgweb - Web-based Database Browser (ล็อกอินอัตโนมัติ เปิดแล้วใช้งานได้เลย)
+  pgweb:
+    image: sosedoff/pgweb:latest
+    container_name: inven_pgweb
+    restart: unless-stopped
+    ports:
+      - "6010:8081"
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER:-inven_admin}:${POSTGRES_PASSWORD:-Xk9#mPv2_wLq8nR4}@db:5432/${POSTGRES_DB:-inven_report_db}?sslmode=disable
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
+    driver: local
+  minio_data:
+    driver: local

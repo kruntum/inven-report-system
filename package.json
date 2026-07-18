@@ -1,0 +1,14 @@
+{
+  "name": "inven-report-system",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:api": "bun --cwd apps/api dev",
+    "dev:web": "bun --cwd apps/web dev",
+    "db:generate": "bun --cwd apps/api db:generate",
+    "db:push": "bun --cwd apps/api db:push",
+    "db:seed": "bun --cwd apps/api db:seed"
+  }
+}

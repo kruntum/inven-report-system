@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/placeholder.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ระบบแจ้งราคา ปริมาณ สถานที่เก็บ และจัดทำบัญชีคุมสินค้า (กรมการค้าภายใน)</title>
+    <script>
+      (function() {
+        function sendErrorToServer(message, type) {
+          try {
+            fetch('/api/debug-log', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                message: message,
+                type: type,
+                url: window.location.href,
+                time: new Date().toISOString()
+              })
+            }).catch(function(err) {
+              console.error('Failed to report error to backend:', err);
+            });
+          } catch(e) {}
+        }
+        
+        function showErrorBanner(message, type) {
+          sendErrorToServer(message, type);
+          var errDiv = document.getElementById('debug-err-banner');
+          if (!errDiv) {
+            errDiv = document.createElement('div');
+            errDiv.id = 'debug-err-banner';
+            errDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#ef4444;color:#fff;padding:12px;font-family:monospace;font-size:12px;z-index:99999;max-height:200px;overflow-y:auto;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);word-break:break-all;';
+            
+            var closeBtn = document.createElement('button');
+            closeBtn.innerText = '❌ Close';
+            closeBtn.style.cssText = 'float:right;background:#b91c1c;color:#fff;border:none;padding:4px 8px;border-radius:4px;cursor:pointer;font-weight:bold;margin-left:12px;';
+            closeBtn.onclick = function() { errDiv.remove(); };
+            errDiv.appendChild(closeBtn);
+            
+            var titleSpan = document.createElement('span');
+            titleSpan.innerHTML = '<strong>[CRITICAL ERROR]</strong> ';
+            errDiv.appendChild(titleSpan);
+            
+            var textSpan = document.createElement('span');
+            textSpan.id = 'debug-err-text';
+            errDiv.appendChild(textSpan);
+            
+            document.body ? document.body.appendChild(errDiv) : document.documentElement.appendChild(errDiv);
+          }
+          var textSpan = document.getElementById('debug-err-text');
+          if (textSpan) {
+            textSpan.innerHTML += '<br/>• [' + type + '] ' + message;
+          }
+        }
+        window.addEventListener('error', function(e) {
+          showErrorBanner(e.message + ' at ' + e.filename + ':' + e.lineno, 'Runtime Error');
+        });
+        window.addEventListener('unhandledrejection', function(e) {
+          var reason = e.reason;
+          var msg = reason && (reason.message || String(reason));
+          showErrorBanner(msg, 'Promise Rejection');
+        });
+      })();
+    </script>
+  </head>
+  <body class="min-h-screen bg-background text-foreground antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

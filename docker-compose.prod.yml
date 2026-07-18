@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  # 1. PostgreSQL Database
+  db:
+    image: postgres:17-alpine
+    container_name: inven_db_prod
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-inven_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-Xk9#mPv2_wLq8nR4}
+      POSTGRES_DB: ${POSTGRES_DB:-inven_report_db}
+    ports:
+      - "6009:5432"
+    volumes:
+      - pgdata_prod:/var/lib/postgresql/data
+
+  # 2. MinIO S3-compatible storage
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: inven_minio_prod
+    restart: always
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio_admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-Zt7@hNc5!bYf3jW9}
+    ports:
+      - "6007:9000"
+      - "6008:9001"
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data_prod:/data
+
+  # 3. Sidecar container to auto-create bucket in MinIO on startup
+  minio-init:
+    image: quay.io/minio/mc:latest
+    container_name: inven_minio_init_prod
+    depends_on:
+      - minio
+    entrypoint: |
+      /bin/sh -c "
+      sleep 3;
+      mc alias set localminio http://minio:9000 minio_admin Zt7_hNc5_bYf3jW9_safe;
+      if ! mc ls localminio/storage-bucket >/dev/null 2>&1; then
+        mc mb localminio/storage-bucket;
+        mc anonymous set public localminio/storage-bucket;
+        echo 'Bucket storage-bucket created successfully.';
+      else
+        echo 'Bucket storage-bucket already exists.';
+      fi;
+      exit 0;
+      "
+
+  # 4. Hono Backend API
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: inven_api_prod
+    restart: always
+    environment:
+      PORT: 6001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-inven_admin}:${POSTGRES_PASSWORD:-Xk9#mPv2_wLq8nR4}@db:5432/${POSTGRES_DB:-inven_report_db}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio_admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-Zt7@hNc5!bYf3jW9}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_BUCKET: storage-bucket
+      JWT_SECRET: ${JWT_SECRET:-aB3_kLm7_nPq9xWz5vR2hT8jYf4cDg6}
+      JWT_EXPIRES_IN: 7d
+    expose:
+      - "6001"
+    depends_on:
+      - db
+      - minio
+
+  # 5. React Frontend Web Application (Nginx static serving)
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: inven_web_prod
+    restart: always
+    expose:
+      - "80"
+    depends_on:
+      - api
+
+  # 6. Nginx Reverse Proxy (Main entrypoint)
+  proxy:
+    image: nginx:alpine
+    container_name: inven_proxy_prod
+    restart: always
+    ports:
+      - "6006:6006"
+    volumes:
+      - ./nginx/prod.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+      - web
+
+volumes:
+  pgdata_prod:
+    driver: local
+  minio_data_prod:
+    driver: local
