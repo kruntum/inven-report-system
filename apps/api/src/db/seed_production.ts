@@ -18,6 +18,20 @@ import {
   masterPartnerTypes
 } from "./schema.ts";
 
+function mapRows(rows: any[]) {
+  return rows.map((row) => {
+    const newRow = { ...row };
+    for (const key of Object.keys(newRow)) {
+      const val = newRow[key];
+      // Convert ISO timestamp strings containing 'T' (e.g. 2026-07-22T04:12:00.000Z) into Date objects
+      if (typeof val === "string" && /^\d{4}-\d{2}-\d{2}T/.test(val)) {
+        newRow[key] = new Date(val);
+      }
+    }
+    return newRow;
+  });
+}
+
 async function main() {
   console.log("🏁 Starting production database seeding...");
 
@@ -86,7 +100,7 @@ async function main() {
   // 3. Seed exported content
   console.log("🏢 Seeding companies (2 records)...");
   if (2 > 0) {
-    await db.insert(companies).values([
+    await db.insert(companies).values(mapRows([
   {
     "id": "18a6edd8-9e99-446b-82ca-241e299a9f0f",
     "companyTypeId": 1,
@@ -129,12 +143,12 @@ async function main() {
     "updatedAt": "2026-07-21T05:39:11.537Z",
     "deletedAt": null
   }
-]);
+]));
   }
 
   console.log("👥 Seeding users (2 records)...");
   if (2 > 0) {
-    await db.insert(users).values([
+    await db.insert(users).values(mapRows([
   {
     "id": "a7a8d811-9271-4851-bcf7-81cf52795f28",
     "companyId": "658168ff-a7e0-4688-bc7f-b820c96d337a",
@@ -157,12 +171,12 @@ async function main() {
     "updatedAt": "2026-07-22T02:32:07.410Z",
     "deletedAt": null
   }
-]);
+]));
   }
 
   console.log("🔗 Seeding userCompanies relations (3 records)...");
   if (3 > 0) {
-    await db.insert(userCompanies).values([
+    await db.insert(userCompanies).values(mapRows([
   {
     "id": "a48f40a0-9272-4a6a-88e5-25cbc0fbd75b",
     "userId": "a7a8d811-9271-4851-bcf7-81cf52795f28",
@@ -181,12 +195,12 @@ async function main() {
     "companyId": "18a6edd8-9e99-446b-82ca-241e299a9f0f",
     "createdAt": "2026-07-22T02:32:07.407Z"
   }
-]);
+]));
   }
 
   console.log("📦 Seeding products (8 records)...");
   if (8 > 0) {
-    await db.insert(products).values([
+    await db.insert(products).values(mapRows([
   {
     "id": "4b3128cc-1946-4617-ab8a-dfd2524cf2d9",
     "name": "มะพร้าวผลอ่อน",
@@ -243,12 +257,12 @@ async function main() {
     "createdAt": "2026-07-11T04:41:17.583Z",
     "deletedAt": "2026-07-22T02:56:39.204Z"
   }
-]);
+]));
   }
 
   console.log("🏬 Seeding storage locations (9 records)...");
   if (9 > 0) {
-    await db.insert(storageLocations).values([
+    await db.insert(storageLocations).values(mapRows([
   {
     "id": "039bb4fa-85df-4a4c-8829-ca74d5c2d581",
     "companyId": "658168ff-a7e0-4688-bc7f-b820c96d337a",
@@ -321,12 +335,12 @@ async function main() {
     "createdAt": "2026-07-13T10:33:26.940Z",
     "deletedAt": "2026-07-20T09:54:13.030Z"
   }
-]);
+]));
   }
 
   console.log("🤝 Seeding partners (9 records)...");
   if (9 > 0) {
-    await db.insert(partners).values([
+    await db.insert(partners).values(mapRows([
   {
     "id": "dd5da901-1a59-4e9d-82ae-fd0ec633b6ea",
     "companyId": "658168ff-a7e0-4688-bc7f-b820c96d337a",
@@ -417,369 +431,17 @@ async function main() {
     "createdAt": "2026-07-22T04:57:50.788Z",
     "deletedAt": null
   }
-]);
+]));
   }
 
   console.log("📄 Seeding documents (0 records)...");
   if (0 > 0) {
-    await db.insert(documents).values([]);
+    await db.insert(documents).values(mapRows([]));
   }
 
-  console.log("📈 Seeding stock transactions (14 records)...");
-  if (14 > 0) {
-    // Chunking insertions to prevent PostgreSQL placeholder limits if records are very large
-    const txs = [
-  {
-    "id": "b46733b6-99c7-4bf2-ac28-65de8f61ae93",
-    "companyId": "658168ff-a7e0-4688-bc7f-b820c96d337a",
-    "storageId": "f94760b8-7a5d-4395-87c0-ab51cb94f261",
-    "productId": "4b3128cc-1946-4617-ab8a-dfd2524cf2d9",
-    "transactionTypeId": 1,
-    "transactionDate": "2026-07-11",
-    "quantity": "15000.0000",
-    "unitPrice": "8.50",
-    "documentId": null,
-    "partnerId": null,
-    "sourcePartnerId": null,
-    "saleType": null,
-    "destinationCountry": null,
-    "invoiceNo": null,
-    "containerNo": null,
-    "productionType": null,
-    "grossWeight": null,
-    "netWeight": null,
-    "unit": null,
-    "pricingType": null,
-    "remarks": "รับซื้อผ่านสัญญารายวัน",
-    "createdAt": "2026-07-11T04:53:17.264Z",
-    "deletedAt": "2026-07-13T11:17:24.449Z"
-  },
-  {
-    "id": "e6a43470-18ba-45d9-bc05-3c3faea7e24e",
-    "companyId": "658168ff-a7e0-4688-bc7f-b820c96d337a",
-    "storageId": "f94760b8-7a5d-4395-87c0-ab51cb94f261",
-    "productId": "4b3128cc-1946-4617-ab8a-dfd2524cf2d9",
-    "transactionTypeId": 1,
-    "transactionDate": "2026-07-12",
-    "quantity": "5000.0000",
-    "unitPrice": "9.00",
-    "documentId": null,
-    "partnerId": null,
-    "sourcePartnerId": null,
-    "saleType": null,
-    "destinationCountry": null,
-    "invoiceNo": null,
-    "containerNo": null,
-    "productionType": null,
-    "grossWeight": null,
-    "netWeight": null,
-    "unit": null,
-    "pricingType": null,
-    "remarks": "รับซื้อตลาดเกษตรกร",
-    "createdAt": "2026-07-11T04:53:17.277Z",
-    "deletedAt": "2026-07-13T11:17:26.471Z"
-  },
-  {
-    "id": "0b57e927-bdf6-4abe-b757-be1f5b7fbc2f",
-    "companyId": "658168ff-a7e0-4688-bc7f-b820c96d337a",
-    "storageId": "039bb4fa-85df-4a4c-8829-ca74d5c2d581",
-    "productId": "4b3128cc-1946-4617-ab8a-dfd2524cf2d9",
-    "transactionTypeId": 2,
-    "transactionDate": "2026-07-17",
-    "quantity": "20000.0000",
-    "unitPrice": "29.00",
-    "documentId": null,
-    "partnerId": "a9336b2c-4764-404c-a409-e763d24fca8a",
-    "sourcePartnerId": null,
-    "saleType": "export",
-    "destinationCountry": "CHINA",
-    "invoiceNo": "A0003",
-    "containerNo": "ABCD2221458",
-    "productionType": "มะพร้าวควั่น",
-    "grossWeight": "28500.0000",
-    "netWeight": "26000.0000",
-    "unit": "ลูก",
-    "pricingType": "per_unit",
-    "remarks": null,
-    "createdAt": "2026-07-21T04:42:23.153Z",
-    "deletedAt": null
-  },
-  {
-    "id": "8367bd4d-4a8b-42d5-8c39-5e7b730e5379",
-    "companyId": "658168ff-a7e0-4688-bc7f-b820c96d337a",
-    "storageId": "039bb4fa-85df-4a4c-8829-ca74d5c2d581",
-    "productId": "4b3128cc-1946-4617-ab8a-dfd2524cf2d9",
-    "transactionTypeId": 2,
-    "transactionDate": "2026-07-18",
-    "quantity": "20000.0000",
-    "unitPrice": "29.00",
-    "documentId": null,
-    "partnerId": "a9336b2c-4764-404c-a409-e763d24fca8a",
-    "sourcePartnerId": null,
-    "saleType": "export",
-    "destinationCountry": "CHINA",
-    "invoiceNo": "A0005",
-    "containerNo": "ABCD2221499",
-    "productionType": "มะพร้าวควั่น",
-    "grossWeight": "28500.0000",
-    "netWeight": "26000.0000",
-    "unit": "ลูก",
-    "pricingType": "per_unit",
-    "remarks": null,
-    "createdAt": "2026-07-22T04:21:02.528Z",
-    "deletedAt": null
-  },
-  {
-    "id": "50d04b20-5223-405e-b246-660a578ed6b4",
-    "companyId": "658168ff-a7e0-4688-bc7f-b820c96d337a",
-    "storageId": "039bb4fa-85df-4a4c-8829-ca74d5c2d581",
-    "productId": "4b3128cc-1946-4617-ab8a-dfd2524cf2d9",
-    "transactionTypeId": 1,
-    "transactionDate": "2026-07-18",
-    "quantity": "20000.0000",
-    "unitPrice": "20.00",
-    "documentId": null,
-    "partnerId": "dd5da901-1a59-4e9d-82ae-fd0ec633b6ea",
-    "sourcePartnerId": null,
-    "saleType": "domestic",
-    "destinationCountry": null,
-    "invoiceNo": "A0005",
-    "containerNo": null,
-    "productionType": "มะพร้าวควั่น",
-    "grossWeight": "28500.0000",
-    "netWeight": "26000.0000",
-    "unit": "ลูก",
-    "pricingType": "per_unit",
-    "remarks": null,
-    "createdAt": "2026-07-22T04:20:47.009Z",
-    "deletedAt": null
-  },
-  {
-    "id": "7009f978-267c-43f5-a1ac-9d9172f6e088",
-    "companyId": "658168ff-a7e0-4688-bc7f-b820c96d337a",
-    "storageId": "039bb4fa-85df-4a4c-8829-ca74d5c2d581",
-    "productId": "4b3128cc-1946-4617-ab8a-dfd2524cf2d9",
-    "transactionTypeId": 1,
-    "transactionDate": "2026-07-13",
-    "quantity": "20000.0000",
-    "unitPrice": "5.30",
-    "documentId": null,
-    "partnerId": "dd5da901-1a59-4e9d-82ae-fd0ec633b6ea",
-    "sourcePartnerId": null,
-    "saleType": "domestic",
-    "destinationCountry": null,
-    "invoiceNo": null,
-    "containerNo": null,
-    "productionType": "มะพร้าวควั่น",
-    "grossWeight": "28500.0000",
-    "netWeight": "26000.0000",
-    "unit": "ลูก",
-    "pricingType": "per_unit",
-    "remarks": null,
-    "createdAt": "2026-07-13T10:40:13.287Z",
-    "deletedAt": null
-  },
-  {
-    "id": "9feb19b9-dc58-4699-bd21-4421a4db1fa8",
-    "companyId": "658168ff-a7e0-4688-bc7f-b820c96d337a",
-    "storageId": "039bb4fa-85df-4a4c-8829-ca74d5c2d581",
-    "productId": "4b3128cc-1946-4617-ab8a-dfd2524cf2d9",
-    "transactionTypeId": 1,
-    "transactionDate": "2026-07-14",
-    "quantity": "20000.0000",
-    "unitPrice": "25.00",
-    "documentId": null,
-    "partnerId": "dd5da901-1a59-4e9d-82ae-fd0ec633b6ea",
-    "sourcePartnerId": null,
-    "saleType": "domestic",
-    "destinationCountry": null,
-    "invoiceNo": "A0001",
-    "containerNo": null,
-    "productionType": "มะพร้าวควั่น",
-    "grossWeight": "28500.0000",
-    "netWeight": "26000.0000",
-    "unit": "ลูก",
-    "pricingType": "per_unit",
-    "remarks": null,
-    "createdAt": "2026-07-21T03:30:46.306Z",
-    "deletedAt": null
-  },
-  {
-    "id": "aaf62d13-75a0-41f4-9474-8d1a3ee1f3c2",
-    "companyId": "658168ff-a7e0-4688-bc7f-b820c96d337a",
-    "storageId": "039bb4fa-85df-4a4c-8829-ca74d5c2d581",
-    "productId": "4b3128cc-1946-4617-ab8a-dfd2524cf2d9",
-    "transactionTypeId": 2,
-    "transactionDate": "2026-07-15",
-    "quantity": "20000.0000",
-    "unitPrice": "31.00",
-    "documentId": null,
-    "partnerId": "a9336b2c-4764-404c-a409-e763d24fca8a",
-    "sourcePartnerId": null,
-    "saleType": "export",
-    "destinationCountry": "CHINA",
-    "invoiceNo": "A0002",
-    "containerNo": "ABCD2221451",
-    "productionType": "มะพร้าวควั่น",
-    "grossWeight": "28500.0000",
-    "netWeight": "26000.0000",
-    "unit": "ลูก",
-    "pricingType": "per_unit",
-    "remarks": null,
-    "createdAt": "2026-07-21T03:34:48.958Z",
-    "deletedAt": null
-  },
-  {
-    "id": "ef343f80-8a29-4bcd-8c0e-9e4d207336bc",
-    "companyId": "658168ff-a7e0-4688-bc7f-b820c96d337a",
-    "storageId": "039bb4fa-85df-4a4c-8829-ca74d5c2d581",
-    "productId": "4b3128cc-1946-4617-ab8a-dfd2524cf2d9",
-    "transactionTypeId": 2,
-    "transactionDate": "2026-07-14",
-    "quantity": "20000.0000",
-    "unitPrice": "30.00",
-    "documentId": null,
-    "partnerId": "a9336b2c-4764-404c-a409-e763d24fca8a",
-    "sourcePartnerId": null,
-    "saleType": "export",
-    "destinationCountry": "CHINA",
-    "invoiceNo": "A0001",
-    "containerNo": "ABCD2221451",
-    "productionType": "มะพร้าวควั่น",
-    "grossWeight": "28500.0000",
-    "netWeight": "26000.0000",
-    "unit": "ลูก",
-    "pricingType": "per_unit",
-    "remarks": null,
-    "createdAt": "2026-07-21T03:33:45.598Z",
-    "deletedAt": null
-  },
-  {
-    "id": "3cd77840-ac51-4167-bb56-c878bcfbbe37",
-    "companyId": "658168ff-a7e0-4688-bc7f-b820c96d337a",
-    "storageId": "039bb4fa-85df-4a4c-8829-ca74d5c2d581",
-    "productId": "4b3128cc-1946-4617-ab8a-dfd2524cf2d9",
-    "transactionTypeId": 2,
-    "transactionDate": "2026-07-13",
-    "quantity": "20000.0000",
-    "unitPrice": "25.00",
-    "documentId": null,
-    "partnerId": "a9336b2c-4764-404c-a409-e763d24fca8a",
-    "sourcePartnerId": null,
-    "saleType": "export",
-    "destinationCountry": "CHINA",
-    "invoiceNo": "A0000",
-    "containerNo": "ABCD2221451",
-    "productionType": "มะพร้าวควั่น",
-    "grossWeight": "28500.0000",
-    "netWeight": "26000.0000",
-    "unit": "ลูก",
-    "pricingType": "per_unit",
-    "remarks": null,
-    "createdAt": "2026-07-20T09:39:08.729Z",
-    "deletedAt": null
-  },
-  {
-    "id": "4e17d773-f617-4995-8110-05764f948ad4",
-    "companyId": "658168ff-a7e0-4688-bc7f-b820c96d337a",
-    "storageId": "039bb4fa-85df-4a4c-8829-ca74d5c2d581",
-    "productId": "4b3128cc-1946-4617-ab8a-dfd2524cf2d9",
-    "transactionTypeId": 1,
-    "transactionDate": "2026-07-16",
-    "quantity": "20000.0000",
-    "unitPrice": "25.00",
-    "documentId": null,
-    "partnerId": "dd5da901-1a59-4e9d-82ae-fd0ec633b6ea",
-    "sourcePartnerId": null,
-    "saleType": "domestic",
-    "destinationCountry": null,
-    "invoiceNo": "A0003",
-    "containerNo": null,
-    "productionType": "มะพร้าวควั่น",
-    "grossWeight": "28500.0000",
-    "netWeight": "26000.0000",
-    "unit": "ลูก",
-    "pricingType": "per_unit",
-    "remarks": null,
-    "createdAt": "2026-07-21T03:34:09.053Z",
-    "deletedAt": null
-  },
-  {
-    "id": "6bc28b18-c34f-44fa-8ebf-0c78771e757d",
-    "companyId": "658168ff-a7e0-4688-bc7f-b820c96d337a",
-    "storageId": "039bb4fa-85df-4a4c-8829-ca74d5c2d581",
-    "productId": "4b3128cc-1946-4617-ab8a-dfd2524cf2d9",
-    "transactionTypeId": 1,
-    "transactionDate": "2026-07-15",
-    "quantity": "20000.0000",
-    "unitPrice": "26.00",
-    "documentId": null,
-    "partnerId": "dd5da901-1a59-4e9d-82ae-fd0ec633b6ea",
-    "sourcePartnerId": null,
-    "saleType": "domestic",
-    "destinationCountry": null,
-    "invoiceNo": "A0002",
-    "containerNo": null,
-    "productionType": "มะพร้าวควั่น",
-    "grossWeight": "28500.0000",
-    "netWeight": "26000.0000",
-    "unit": "ลูก",
-    "pricingType": "per_unit",
-    "remarks": null,
-    "createdAt": "2026-07-21T04:40:48.192Z",
-    "deletedAt": null
-  },
-  {
-    "id": "3ca979e0-a759-41d4-9b28-43d35906686e",
-    "companyId": "658168ff-a7e0-4688-bc7f-b820c96d337a",
-    "storageId": "039bb4fa-85df-4a4c-8829-ca74d5c2d581",
-    "productId": "4b3128cc-1946-4617-ab8a-dfd2524cf2d9",
-    "transactionTypeId": 2,
-    "transactionDate": "2026-07-16",
-    "quantity": "20000.0000",
-    "unitPrice": "27.00",
-    "documentId": null,
-    "partnerId": "a9336b2c-4764-404c-a409-e763d24fca8a",
-    "sourcePartnerId": null,
-    "saleType": "export",
-    "destinationCountry": "CHINA",
-    "invoiceNo": "A0003",
-    "containerNo": "ABCD2221455",
-    "productionType": "มะพร้าวควั่น",
-    "grossWeight": "28500.0000",
-    "netWeight": "26000.0000",
-    "unit": "ลูก",
-    "pricingType": "per_unit",
-    "remarks": null,
-    "createdAt": "2026-07-21T04:41:23.653Z",
-    "deletedAt": null
-  },
-  {
-    "id": "3d716573-4c38-4a66-9885-c944a4f16370",
-    "companyId": "658168ff-a7e0-4688-bc7f-b820c96d337a",
-    "storageId": "039bb4fa-85df-4a4c-8829-ca74d5c2d581",
-    "productId": "4b3128cc-1946-4617-ab8a-dfd2524cf2d9",
-    "transactionTypeId": 1,
-    "transactionDate": "2026-07-17",
-    "quantity": "20000.0000",
-    "unitPrice": "20.00",
-    "documentId": null,
-    "partnerId": "dd5da901-1a59-4e9d-82ae-fd0ec633b6ea",
-    "sourcePartnerId": null,
-    "saleType": "domestic",
-    "destinationCountry": null,
-    "invoiceNo": "A0004",
-    "containerNo": null,
-    "productionType": "มะพร้าวควั่น",
-    "grossWeight": "28500.0000",
-    "netWeight": "26000.0000",
-    "unit": "ลูก",
-    "pricingType": "per_unit",
-    "remarks": null,
-    "createdAt": "2026-07-21T04:42:04.927Z",
-    "deletedAt": null
-  }
-];
+  console.log("📈 Seeding stock transactions (0 records)...");
+  if (0 > 0) {
+    const txs = mapRows([]);
     const chunkSize = 200;
     for (let i = 0; i < txs.length; i += chunkSize) {
       const chunk = txs.slice(i, i + chunkSize);
@@ -787,34 +449,9 @@ async function main() {
     }
   }
 
-  console.log("📊 Seeding monthly reports (1 records)...");
-  if (1 > 0) {
-    await db.insert(monthlyReports).values([
-  {
-    "id": "204e4d93-3b9e-448e-b4b5-45f7a637054c",
-    "companyId": "658168ff-a7e0-4688-bc7f-b820c96d337a",
-    "productId": "4b3128cc-1946-4617-ab8a-dfd2524cf2d9",
-    "storageId": null,
-    "reportMonth": 7,
-    "reportYear": 2026,
-    "totalPurchaseQty": "120000.0000",
-    "avgPurchasePrice": "20.22",
-    "totalSalesQty": "120000.0000",
-    "avgSalesPrice": "28.50",
-    "totalSalesDomesticQty": "0.0000",
-    "avgSalesDomesticPrice": "0.00",
-    "totalSalesExportQty": "120000.0000",
-    "avgSalesExportPrice": "28.50",
-    "totalUsageQty": "0.0000",
-    "endingBalanceQty": "0.0000",
-    "partnerDetailsJson": "{\"partners\":[{\"id\":\"dd5da901-1a59-4e9d-82ae-fd0ec633b6ea\",\"name\":\"สวนลุงพล\",\"regNo\":\"DOA 50000 99 11 010121\",\"partnerTypeId\":1,\"sourcePartnerName\":null,\"sourcePartnerRegNo\":null,\"quantity\":\"20000.0000\",\"unitPrice\":\"5.30\",\"transactionDate\":\"2026-07-13\"},{\"id\":\"dd5da901-1a59-4e9d-82ae-fd0ec633b6ea\",\"name\":\"สวนลุงพล\",\"regNo\":\"DOA 50000 99 11 010121\",\"partnerTypeId\":1,\"sourcePartnerName\":null,\"sourcePartnerRegNo\":null,\"quantity\":\"20000.0000\",\"unitPrice\":\"20.00\",\"transactionDate\":\"2026-07-18\"},{\"id\":\"dd5da901-1a59-4e9d-82ae-fd0ec633b6ea\",\"name\":\"สวนลุงพล\",\"regNo\":\"DOA 50000 99 11 010121\",\"partnerTypeId\":1,\"sourcePartnerName\":null,\"sourcePartnerRegNo\":null,\"quantity\":\"20000.0000\",\"unitPrice\":\"25.00\",\"transactionDate\":\"2026-07-14\"},{\"id\":\"dd5da901-1a59-4e9d-82ae-fd0ec633b6ea\",\"name\":\"สวนลุงพล\",\"regNo\":\"DOA 50000 99 11 010121\",\"partnerTypeId\":1,\"sourcePartnerName\":null,\"sourcePartnerRegNo\":null,\"quantity\":\"20000.0000\",\"unitPrice\":\"25.00\",\"transactionDate\":\"2026-07-16\"},{\"id\":\"dd5da901-1a59-4e9d-82ae-fd0ec633b6ea\",\"name\":\"สวนลุงพล\",\"regNo\":\"DOA 50000 99 11 010121\",\"partnerTypeId\":1,\"sourcePartnerName\":null,\"sourcePartnerRegNo\":null,\"quantity\":\"20000.0000\",\"unitPrice\":\"26.00\",\"transactionDate\":\"2026-07-15\"},{\"id\":\"dd5da901-1a59-4e9d-82ae-fd0ec633b6ea\",\"name\":\"สวนลุงพล\",\"regNo\":\"DOA 50000 99 11 010121\",\"partnerTypeId\":1,\"sourcePartnerName\":null,\"sourcePartnerRegNo\":null,\"quantity\":\"20000.0000\",\"unitPrice\":\"20.00\",\"transactionDate\":\"2026-07-17\"}],\"productions\":[]}",
-    "remarks": null,
-    "statusId": 1,
-    "submittedAt": null,
-    "createdAt": "2026-07-13T11:20:38.991Z",
-    "updatedAt": "2026-07-22T04:40:57.020Z"
-  }
-]);
+  console.log("📊 Seeding monthly reports (0 records)...");
+  if (0 > 0) {
+    await db.insert(monthlyReports).values(mapRows([]));
   }
 
   console.log("🎉 Production seeding completed successfully!");

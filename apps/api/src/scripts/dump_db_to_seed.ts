@@ -67,6 +67,20 @@ import {
   masterPartnerTypes
 } from "./schema.ts";
 
+function mapRows(rows: any[]) {
+  return rows.map((row) => {
+    const newRow = { ...row };
+    for (const key of Object.keys(newRow)) {
+      const val = newRow[key];
+      // Convert ISO timestamp strings containing 'T' (e.g. 2026-07-22T04:12:00.000Z) into Date objects
+      if (typeof val === "string" && /^\\d{4}-\\d{2}-\\d{2}T/.test(val)) {
+        newRow[key] = new Date(val);
+      }
+    }
+    return newRow;
+  });
+}
+
 async function main() {
   console.log("🏁 Starting production database seeding...");
 
@@ -135,43 +149,42 @@ async function main() {
   // 3. Seed exported content
   console.log("🏢 Seeding companies (${companiesList.length} records)...");
   if (${companiesList.length} > 0) {
-    await db.insert(companies).values(${JSON.stringify(companiesList, null, 2)});
+    await db.insert(companies).values(mapRows(${JSON.stringify(companiesList, null, 2)}));
   }
 
   console.log("👥 Seeding users (${usersList.length} records)...");
   if (${usersList.length} > 0) {
-    await db.insert(users).values(${JSON.stringify(usersList, null, 2)});
+    await db.insert(users).values(mapRows(${JSON.stringify(usersList, null, 2)}));
   }
 
   console.log("🔗 Seeding userCompanies relations (${userCompaniesList.length} records)...");
   if (${userCompaniesList.length} > 0) {
-    await db.insert(userCompanies).values(${JSON.stringify(userCompaniesList, null, 2)});
+    await db.insert(userCompanies).values(mapRows(${JSON.stringify(userCompaniesList, null, 2)}));
   }
 
   console.log("📦 Seeding products (${productsList.length} records)...");
   if (${productsList.length} > 0) {
-    await db.insert(products).values(${JSON.stringify(productsList, null, 2)});
+    await db.insert(products).values(mapRows(${JSON.stringify(productsList, null, 2)}));
   }
 
   console.log("🏬 Seeding storage locations (${storageLocationsList.length} records)...");
   if (${storageLocationsList.length} > 0) {
-    await db.insert(storageLocations).values(${JSON.stringify(storageLocationsList, null, 2)});
+    await db.insert(storageLocations).values(mapRows(${JSON.stringify(storageLocationsList, null, 2)}));
   }
 
   console.log("🤝 Seeding partners (${partnersList.length} records)...");
   if (${partnersList.length} > 0) {
-    await db.insert(partners).values(${JSON.stringify(partnersList, null, 2)});
+    await db.insert(partners).values(mapRows(${JSON.stringify(partnersList, null, 2)}));
   }
 
   console.log("📄 Seeding documents (${documentsList.length} records)...");
   if (${documentsList.length} > 0) {
-    await db.insert(documents).values(${JSON.stringify(documentsList, null, 2)});
+    await db.insert(documents).values(mapRows(${JSON.stringify(documentsList, null, 2)}));
   }
 
   console.log("📈 Seeding stock transactions (${stockTransactionsList.length} records)...");
   if (${stockTransactionsList.length} > 0) {
-    // Chunking insertions to prevent PostgreSQL placeholder limits if records are very large
-    const txs = ${JSON.stringify(stockTransactionsList, null, 2)};
+    const txs = mapRows(${JSON.stringify(stockTransactionsList, null, 2)});
     const chunkSize = 200;
     for (let i = 0; i < txs.length; i += chunkSize) {
       const chunk = txs.slice(i, i + chunkSize);
@@ -181,7 +194,7 @@ async function main() {
 
   console.log("📊 Seeding monthly reports (${monthlyReportsList.length} records)...");
   if (${monthlyReportsList.length} > 0) {
-    await db.insert(monthlyReports).values(${JSON.stringify(monthlyReportsList, null, 2)});
+    await db.insert(monthlyReports).values(mapRows(${JSON.stringify(monthlyReportsList, null, 2)}));
   }
 
   console.log("🎉 Production seeding completed successfully!");
