@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -7,39 +7,36 @@ import { api } from "../lib/api.ts";
 import { useConfirm } from "../store/useConfirm.ts";
 import { useAppStore } from "../store/useAppStore.ts";
 import { DataTable } from "../components/shared/data-table.tsx";
-import { Card, CardContent } from "@/components/ui/card.tsx";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
 import { Textarea } from "@/components/ui/textarea.tsx";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select.tsx";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog.tsx";
-import { Pencil, Trash2, Plus, Lock } from "lucide-react";
-import { toast } from "sonner";
+import { Plus, Lock } from "lucide-react";
+import { partnerFormSchema } from "../schemas/index.ts";
+import { Partner } from "../types/index.ts";
+import { useCrudMutations } from "../hooks/useCrudMutations.ts";
+import { ActionCell } from "../components/shared/ActionCell.tsx";
 
-const partnerFormSchema = z.object({
-  name: z.string().min(2, "ชื่อคู่ค้าต้องมีอย่างน้อย 2 ตัวอักษร"),
-  partnerTypeId: z.coerce.number().int().min(1).max(4),
-  regNo: z.string().optional().nullable(),
-  address: z.string().optional().nullable(),
-});
+type PartnerFormValues = z.infer<typeof partnerFormSchema>;
 
 export function PartnersPage() {
-  const queryClient = useQueryClient();
-  const user = useAppStore((state: any) => state.user);
+  const user = useAppStore((state) => state.user);
   const isAdmin = user?.roleId === 1;
   const isDataEntry = user?.roleId === 2;
   const canManage = isAdmin || isDataEntry;
   const confirm = useConfirm((state) => state.confirm);
   const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [editingItem, setEditingItem] = React.useState<any | null>(null);
+  const [editingItem, setEditingItem] = React.useState<Partner | null>(null);
 
-  const { data: partnersData, isLoading } = useQuery({
+  const { data: partnersData, isLoading } = useQuery<{ success: boolean; data: Partner[] }>({
     queryKey: ["partners"],
     queryFn: () => api.get("/stock/partners")
   });
 
-  const { register, handleSubmit, reset, control, watch, formState: { errors } } = useForm<z.infer<typeof partnerFormSchema>>({
+  const { register, handleSubmit, reset, control, watch, formState: { errors } } = useForm<PartnerFormValues>({
     resolver: zodResolver(partnerFormSchema),
     defaultValues: { name: "", partnerTypeId: 1, regNo: "", address: "" }
   });
@@ -59,45 +56,23 @@ export function PartnersPage() {
     }
   }, [editingItem, reset]);
 
-  const addMutation = useMutation({
-    mutationFn: (data: any) => api.post("/stock/partners", data),
-    onSuccess: () => {
-      toast.success("เพิ่มข้อมูลคู่ค้าสำเร็จ");
-      queryClient.invalidateQueries({ queryKey: ["partners"] });
-      setDialogOpen(false);
-    },
-    onError: (err: any) => {
-      toast.error(err.message || "เกิดข้อผิดพลาด");
-    }
-  });
-
-  const editMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => api.put(`/stock/partners/${id}`, data),
-    onSuccess: () => {
-      toast.success("แก้ไขข้อมูลคู่ค้าสำเร็จ");
-      queryClient.invalidateQueries({ queryKey: ["partners"] });
+  const { addMutation, editMutation, deleteMutation } = useCrudMutations<PartnerFormValues>(
+    "/stock/partners",
+    ["partners"],
+    () => {
       setDialogOpen(false);
       setEditingItem(null);
     },
-    onError: (err: any) => {
-      toast.error(err.message || "เกิดข้อผิดพลาด");
+    {
+      add: "เพิ่มข้อมูลคู่ค้าสำเร็จ",
+      edit: "แก้ไขข้อมูลคู่ค้าสำเร็จ",
+      delete: "ลบข้อมูลคู่ค้าสำเร็จ",
     }
-  });
+  );
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/stock/partners/${id}`),
-    onSuccess: () => {
-      toast.success("ลบข้อมูลคู่ค้าสำเร็จ");
-      queryClient.invalidateQueries({ queryKey: ["partners"] });
-    },
-    onError: (err: any) => {
-      toast.error(err.message || "เกิดข้อผิดพลาด");
-    }
-  });
-
-  const onSubmit = (data: z.infer<typeof partnerFormSchema>) => {
+  const onSubmit = (data: PartnerFormValues) => {
     if (editingItem) {
-      editMutation.mutate({ id: editingItem.id, data });
+      editMutation.mutate({ id: editingItem.id, body: data });
     } else {
       addMutation.mutate(data);
     }
@@ -107,49 +82,51 @@ export function PartnersPage() {
     { accessorKey: "name", header: "ชื่อคู่ค้า / เกษตรกร / โรงงาน" },
     { accessorKey: "partnerTypeName", header: "ประเภทคู่ค้า" },
     { accessorKey: "regNo", header: "เลขทะเบียนคุม (DOA/GAP)", cell: ({ row }: any) => row.original.regNo || "-" },
-    { accessorKey: "address", header: "ที่อยู่/รายละเอียด", cell: ({ row }: any) => <span className="truncate max-w-xs block">{row.original.address || "-"}</span> },
+    { 
+      accessorKey: "address", 
+      header: "ที่อยู่/รายละเอียด", 
+      cell: ({ row }: any) => <span className="truncate max-w-xs block">{row.original.address || "-"}</span> 
+    },
     {
       id: "actions",
       header: "จัดการ",
       cell: ({ row }: any) => {
-        if (!canManage) return <span title="ไม่มีสิทธิ์จัดการ"><Lock className="h-4 w-4 opacity-30" /></span>;
+        const item = row.original as Partner;
+        if (!canManage) {
+          return (
+            <span title="ไม่มีสิทธิ์จัดการ">
+              <Lock className="h-4 w-4 opacity-30" />
+            </span>
+          );
+        }
         return (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                setEditingItem(row.original);
-                setDialogOpen(true);
-              }}
-              className="text-primary hover:bg-primary/10 p-1.5 rounded-lg cursor-pointer transition-colors"
-              title="แก้ไขข้อมูล"
-            >
-              <Pencil className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => {
-                confirm({
-                  title: "ยืนยันการลบข้อมูลคู่ค้า",
-                  description: `คุณแน่ใจว่าต้องการลบคู่ค้า "${row.original.name}" ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้`,
-                  onConfirm: () => deleteMutation.mutate(row.original.id)
-                });
-              }}
-              className="text-destructive hover:bg-destructive/10 p-1.5 rounded-lg cursor-pointer transition-colors"
-              title="ลบข้อมูล"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-          </div>
+          <ActionCell
+            onEdit={() => {
+              setEditingItem(item);
+              setDialogOpen(true);
+            }}
+            onDelete={() => {
+              confirm({
+                title: "ยืนยันการลบข้อมูลคู่ค้า",
+                description: `คุณแน่ใจว่าต้องการลบคู่ค้า "${item.name}" ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้`,
+                onConfirm: () => deleteMutation.mutate(item.id)
+              });
+            }}
+          />
         );
       }
     }
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <Card className="h-[calc(100vh-5.5rem)] flex flex-col border-border/60 shadow-sm bg-card/60 backdrop-blur-sm overflow-hidden p-0">
+      {/* Top Header */}
+      <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-border/40 shrink-0 px-6 pt-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight">ข้อมูลคู่ค้า / เกษตรกร</h1>
-          <p className="text-muted-foreground text-sm">ผู้ขายวัตถุดิบต้นทาง (สวน GAP/โรงงาน DOA) หรือลูกค้าผู้รับซื้อสินค้าปลายทาง</p>
+          <CardTitle className="text-2xl font-extrabold tracking-tight">ข้อมูลคู่ค้า / เกษตรกร</CardTitle>
+          <CardDescription className="text-xs mt-0.5">
+            ผู้ขายวัตถุดิบต้นทาง (สวน GAP/โรงงาน DOA) หรือลูกค้าผู้รับซื้อสินค้าปลายทาง
+          </CardDescription>
         </div>
         {canManage && (
           <Dialog open={dialogOpen} onOpenChange={(open) => {
@@ -157,7 +134,7 @@ export function PartnersPage() {
             if (!open) setEditingItem(null);
           }}>
             <DialogTrigger asChild>
-              <Button className="font-semibold cursor-pointer text-xs h-8.5 gap-1.5">
+              <Button className="font-semibold cursor-pointer text-xs h-8.5 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white">
                 <Plus className="h-3.5 w-3.5" />
                 เพิ่มคู่ค้าใหม่
               </Button>
@@ -186,7 +163,7 @@ export function PartnersPage() {
                   <Controller
                     name="partnerTypeId"
                     control={control}
-                    render={({ field }: { field: any }) => (
+                    render={({ field }) => (
                       <Select 
                         onValueChange={(val) => field.onChange(Number(val))} 
                         value={field.value?.toString()}
@@ -237,19 +214,18 @@ export function PartnersPage() {
             </DialogContent>
           </Dialog>
         )}
-      </div>
+      </CardHeader>
 
-      <Card>
-        <CardContent className="pt-6">
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground text-center py-12">กำลังดึงข้อมูล...</p>
-          ) : partnersData?.data ? (
-            <DataTable columns={columns} data={partnersData.data} />
-          ) : (
-            <p className="text-sm text-muted-foreground text-center py-12">ไม่พบข้อมูลคู่ค้า</p>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+      {/* Main Full-Height Content: DataTable Flex-1 with internal scroll */}
+      <CardContent className="flex-1 overflow-hidden p-6 pt-4 flex flex-col min-h-0">
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground text-center py-12">กำลังดึงข้อมูล...</p>
+        ) : partnersData?.data ? (
+          <DataTable columns={columns} data={partnersData.data} />
+        ) : (
+          <p className="text-sm text-muted-foreground text-center py-12">ไม่พบข้อมูลคู่ค้า</p>
+        )}
+      </CardContent>
+    </Card>
   );
 }

@@ -26,7 +26,7 @@ export function ConfirmDialog() {
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleCancel(); }}>
       <DialogContent className="sm:max-w-[400px] p-5">
         <DialogHeader className="pb-1">
-          <DialogTitle className="text-base font-extrabold flex items-center gap-2 text-amber-600">
+          <DialogTitle className="text-base font-extrabold flex items-center gap-2 text-amber-600 dark:text-amber-500">
             ⚠️ {title}
           </DialogTitle>
           <DialogDescription className="text-xs pt-1.5 leading-relaxed text-foreground">
@@ -37,7 +37,7 @@ export function ConfirmDialog() {
           <Button variant="outline" onClick={handleCancel} className="h-8 text-xs font-semibold cursor-pointer">
             ยกเลิก
           </Button>
-          <Button onClick={handleConfirm} className="bg-primary text-white hover:bg-primary/95 h-8 text-xs font-semibold cursor-pointer">
+          <Button onClick={handleConfirm} className="h-8 text-xs font-semibold cursor-pointer">
             ยืนยัน
           </Button>
         </DialogFooter>

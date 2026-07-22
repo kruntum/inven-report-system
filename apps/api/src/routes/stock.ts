@@ -79,6 +79,8 @@ stock.get("/", async (c) => {
         sourcePartnerRegNo: sourcePartners.regNo,
         saleType: stockTransactions.saleType,
         destinationCountry: stockTransactions.destinationCountry,
+        invoiceNo: stockTransactions.invoiceNo,
+        containerNo: stockTransactions.containerNo,
         productionType: stockTransactions.productionType,
         grossWeight: stockTransactions.grossWeight,
         netWeight: stockTransactions.netWeight,
@@ -97,7 +99,7 @@ stock.get("/", async (c) => {
       .leftJoin(masterPartnerTypes, eq(mainPartners.partnerTypeId, masterPartnerTypes.id))
       .leftJoin(sourcePartners, eq(stockTransactions.sourcePartnerId, sourcePartners.id))
       .where(and(...conditions))
-      .orderBy(desc(stockTransactions.transactionDate), desc(stockTransactions.createdAt));
+      .orderBy(desc(stockTransactions.transactionDate), desc(stockTransactions.transactionTypeId), desc(stockTransactions.createdAt));
 
     return c.json({
       success: true,
@@ -133,6 +135,8 @@ stock.post("/", async (c) => {
       sourcePartnerId,
       saleType,
       destinationCountry,
+      invoiceNo,
+      containerNo,
       productionType,
       grossWeight,
       netWeight,
@@ -230,6 +234,8 @@ stock.post("/", async (c) => {
       sourcePartnerId: sourcePartnerId || null,
       saleType: saleType || null,
       destinationCountry: destinationCountry || null,
+      invoiceNo: invoiceNo || null,
+      containerNo: containerNo || null,
       productionType: productionType || null,
       grossWeight: grossWeight || null,
       netWeight: netWeight || null,
@@ -295,7 +301,7 @@ stock.put("/:id", async (c) => {
 
     // 3. Resolve target storage location if changing
     let finalStorageId = existing.storageId;
-    const { storageId, isDirectExport, productId, transactionTypeId, transactionDate, quantity, unitPrice, partnerId, sourcePartnerId, saleType, destinationCountry, productionType, grossWeight, netWeight, pricingType, remarks } = body;
+    const { storageId, isDirectExport, productId, transactionTypeId, transactionDate, quantity, unitPrice, partnerId, sourcePartnerId, saleType, destinationCountry, invoiceNo, containerNo, productionType, grossWeight, netWeight, pricingType, remarks } = body;
 
     if (isDirectExport !== undefined || storageId !== undefined) {
       const targetDirectExport = isDirectExport !== undefined ? isDirectExport : (existing.storageId === null); // virtual check
@@ -374,6 +380,8 @@ stock.put("/:id", async (c) => {
         sourcePartnerId: sourcePartnerId !== undefined ? sourcePartnerId : existing.sourcePartnerId,
         saleType: saleType !== undefined ? saleType : existing.saleType,
         destinationCountry: destinationCountry !== undefined ? destinationCountry : existing.destinationCountry,
+        invoiceNo: invoiceNo !== undefined ? invoiceNo : existing.invoiceNo,
+        containerNo: containerNo !== undefined ? containerNo : existing.containerNo,
         productionType: productionType !== undefined ? productionType : existing.productionType,
         grossWeight: grossWeight !== undefined ? (grossWeight ? grossWeight.toString() : null) : existing.grossWeight,
         netWeight: netWeight !== undefined ? (netWeight ? netWeight.toString() : null) : existing.netWeight,

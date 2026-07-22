@@ -42,6 +42,8 @@ export const createTransactionSchema = z.object({
   sourcePartnerId: z.string().uuid("Invalid Source Partner ID").optional().nullable(),
   saleType: z.string().optional().nullable(), // 'domestic' or 'export'
   destinationCountry: z.string().max(100).optional().nullable(),
+  invoiceNo: z.string().max(100).optional().nullable(),
+  containerNo: z.string().max(100).optional().nullable(),
   productionType: z.string().max(255).optional().nullable(),
   grossWeight: z.string().refine((val) => !val || (!isNaN(Number(val)) && Number(val) >= 0), {
     message: "Gross weight must be a valid non-negative number",

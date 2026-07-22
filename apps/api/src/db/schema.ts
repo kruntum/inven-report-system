@@ -59,6 +59,8 @@ export const companies = pgTable("companies", {
   address: text("address").notNull().default(""),
   phone: varchar("phone", { length: 50 }),
   email: varchar("email", { length: 255 }),
+  authorizedPerson: varchar("authorized_person", { length: 255 }),
+  authorizedPosition: varchar("authorized_position", { length: 255 }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),  // Soft Delete
@@ -77,6 +79,17 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),  // Soft Delete
+});
+
+export const userCompanies = pgTable("user_companies", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  companyId: uuid("company_id")
+    .references(() => companies.id, { onDelete: "cascade" })
+    .notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
 export const products = pgTable("products", {
@@ -165,6 +178,8 @@ export const stockTransactions = pgTable("stock_transactions", {
     .references(() => partners.id, { onDelete: "restrict" }), // Original factory/source partner (for collectors)
   saleType: varchar("sale_type", { length: 50 }), // 'domestic' or 'export'
   destinationCountry: varchar("destination_country", { length: 100 }), // Export destination country
+  invoiceNo: varchar("invoice_no", { length: 100 }), // เลขที่ใบกำกับภาษี / อินวอยซ์
+  containerNo: varchar("container_no", { length: 100 }), // เลขตู้คอนเทนเนอร์ / เบอร์ตู้
   productionType: varchar("production_type", { length: 255 }), // e.g. production details
   grossWeight: decimal("gross_weight", { precision: 14, scale: 4 }), // น้ำหนักรวมแพ็กเกจ
   netWeight: decimal("net_weight", { precision: 14, scale: 4 }), // น้ำหนักเนื้อ ไม่รวมกล่อง

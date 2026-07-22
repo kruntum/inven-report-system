@@ -2,14 +2,16 @@ import * as React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { api } from "../lib/api.ts";
 import { useThaiAddress } from "../hooks/useThaiAddress.ts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select.tsx";
 import { toast } from "sonner";
+
+import { companyFormSchema } from "../schemas/index.ts";
 
 export function CompanySettingsPage() {
   const queryClient = useQueryClient();
@@ -23,19 +25,8 @@ export function CompanySettingsPage() {
 
   const company = companyRes?.data;
 
-  // React hook form
-  const formSchema = z.object({
-    name: z.string().min(2, "ชื่อบริษัทต้องมีอย่างน้อย 2 ตัวอักษร"),
-    taxId: z.string().length(13, "เลขประจำตัวผู้เสียภาษีต้องมี 13 หลัก"),
-    houseNo: z.string().min(1, "กรุณากรอกเลขที่บ้าน"),
-    soi: z.string().optional(),
-    road: z.string().optional(),
-    phone: z.string().optional(),
-    email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง").optional().or(z.literal("")),
-  });
-
   const { register, handleSubmit, setValue, formState: { errors } } = useForm({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(companyFormSchema),
     defaultValues: {
       name: "",
       taxId: "",
@@ -44,12 +35,16 @@ export function CompanySettingsPage() {
       road: "",
       phone: "",
       email: "",
+      authorizedPerson: "",
+      authorizedPosition: "",
     }
   });
 
+  const { initializeAddress } = addressSelector;
+
   // Map database values into form and initialize cascading selector when loaded
   React.useEffect(() => {
-    if (!company || addressSelector.loading) return;
+    if (!company) return;
     
     setValue("name", company.name || "");
     setValue("taxId", company.taxId || "");
@@ -58,13 +53,17 @@ export function CompanySettingsPage() {
     setValue("road", company.road || "");
     setValue("phone", company.phone || "");
     setValue("email", company.email || "");
+    setValue("authorizedPerson", company.authorizedPerson || "");
+    setValue("authorizedPosition", company.authorizedPosition || "");
 
-    addressSelector.initializeAddress(
-      company.province,
-      company.district,
-      company.subDistrict
-    );
-  }, [company, addressSelector.loading, setValue]);
+    if (company.province) {
+      initializeAddress(
+        company.province,
+        company.district || company.district_name,
+        company.subDistrict || company.sub_district
+      );
+    }
+  }, [company, initializeAddress, setValue]);
 
   // Submit Mutation
   const mutation = useMutation({
@@ -80,7 +79,13 @@ export function CompanySettingsPage() {
   });
 
   const onSubmit = (formData: any) => {
-    const { province, district, subDistrict, zipcode } = addressSelector.getSelectedNames();
+    const selectedNames = addressSelector.getSelectedNames();
+
+    // Fallback to existing database address if user did not re-select from dropdown
+    const province = selectedNames.province || company?.province || "";
+    const district = selectedNames.district || company?.district || "";
+    const subDistrict = selectedNames.subDistrict || company?.subDistrict || "";
+    const zipcode = addressSelector.zipcode || company?.zipcode || "";
 
     if (!province || !district || !subDistrict || !zipcode) {
       toast.warning("กรุณากรอก จังหวัด อำเภอ ตำบล และรหัสไปรษณีย์ ให้ครบถ้วน");
@@ -155,6 +160,26 @@ export function CompanySettingsPage() {
             <div className="border-t border-border/60 my-4" />
 
             <div className="space-y-2">
+              <h3 className="text-sm font-bold text-foreground">ผู้มีอำนาจลงนามและตำแหน่ง (สำหรับลงชื่อท้ายรายงานส่งราชการ)</h3>
+            </div>
+
+            {/* Row: Authorized Person and Position */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label htmlFor="authorizedPerson" className="text-[11px] font-bold text-muted-foreground/90">ชื่อผู้มีอำนาจลงนาม (ข้าพเจ้าขอรับรอง/ลงชื่อผู้แจ้ง)</Label>
+                <Input id="authorizedPerson" {...register("authorizedPerson")} placeholder="ระบุชื่อ-นามสกุล..." className="bg-background/80" />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="authorizedPosition" className="text-[11px] font-bold text-muted-foreground/90">ตำแหน่งผู้ลงนาม</Label>
+                <Input id="authorizedPosition" {...register("authorizedPosition")} placeholder="เช่น กรรมการผู้จัดการ, ผู้รับมอบอำนาจ..." className="bg-background/80" />
+              </div>
+            </div>
+
+            {/* Divider line */}
+            <div className="border-t border-border/60 my-4" />
+
+            <div className="space-y-2">
               <h3 className="text-sm font-bold text-foreground">สำนักงานใหญ่ / สถานที่ประกอบการ ตั้งอยู่</h3>
             </div>
 
@@ -183,54 +208,76 @@ export function CompanySettingsPage() {
               {/* Province Dropdown */}
               <div className="space-y-1">
                 <Label className="text-[11px] font-bold text-muted-foreground/90">จังหวัด</Label>
-                <select
-                  value={addressSelector.provinceId}
-                  onChange={(e) => addressSelector.handleProvinceChange(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background/80 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                <Select
+                  value={addressSelector.provinceId || company?.province || ""}
+                  onValueChange={(val) => addressSelector.handleProvinceChange(val)}
                 >
-                  <option value="">— เลือกจังหวัด —</option>
-                  {addressSelector.provinces.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name_th}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full bg-background/80 h-9 text-xs">
+                    <SelectValue placeholder="— เลือกจังหวัด —" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px] overflow-y-auto">
+                    {company?.province && (
+                      <SelectItem value={company.province}>
+                        {company.province}
+                      </SelectItem>
+                    )}
+                    {addressSelector.provinces.map((p) => (
+                      <SelectItem key={p.id} value={p.id.toString()}>
+                        {p.name_th}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* District Dropdown */}
               <div className="space-y-1">
                 <Label className="text-[11px] font-bold text-muted-foreground/90">อำเภอ / เขต</Label>
-                <select
-                  value={addressSelector.districtId}
-                  onChange={(e) => addressSelector.handleDistrictChange(e.target.value)}
-                  disabled={!addressSelector.provinceId}
-                  className="w-full rounded-md border border-input bg-background/80 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                <Select
+                  value={addressSelector.districtId || company?.district || ""}
+                  onValueChange={(val) => addressSelector.handleDistrictChange(val)}
                 >
-                  <option value="">— เลือกอำเภอ —</option>
-                  {addressSelector.districts.map((d: any) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name_th}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full bg-background/80 h-9 text-xs">
+                    <SelectValue placeholder="— เลือกอำเภอ —" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px] overflow-y-auto">
+                    {company?.district && (
+                      <SelectItem value={company.district}>
+                        {company.district}
+                      </SelectItem>
+                    )}
+                    {addressSelector.districts.map((d: any) => (
+                      <SelectItem key={d.id} value={d.id.toString()}>
+                        {d.name_th}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* SubDistrict Dropdown */}
               <div className="space-y-1">
                 <Label className="text-[11px] font-bold text-muted-foreground/90">ตำบล / แขวง</Label>
-                <select
-                  value={addressSelector.subDistrictId}
-                  onChange={(e) => addressSelector.handleSubDistrictChange(e.target.value)}
-                  disabled={!addressSelector.districtId}
-                  className="w-full rounded-md border border-input bg-background/80 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                <Select
+                  value={addressSelector.subDistrictId || company?.subDistrict || ""}
+                  onValueChange={(val) => addressSelector.handleSubDistrictChange(val)}
                 >
-                  <option value="">— เลือกตำบล —</option>
-                  {addressSelector.subDistricts.map((s: any) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name_th}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full bg-background/80 h-9 text-xs">
+                    <SelectValue placeholder="— เลือกตำบล —" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px] overflow-y-auto">
+                    {company?.subDistrict && (
+                      <SelectItem value={company.subDistrict}>
+                        {company.subDistrict}
+                      </SelectItem>
+                    )}
+                    {addressSelector.subDistricts.map((s: any) => (
+                      <SelectItem key={s.id} value={s.id.toString()}>
+                        {s.name_th}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Zipcode (Auto-filled, Read Only) */}
@@ -238,7 +285,7 @@ export function CompanySettingsPage() {
                 <Label className="text-[11px] font-bold text-muted-foreground/90">รหัสไปรษณีย์</Label>
                 <Input
                   type="text"
-                  value={addressSelector.zipcode}
+                  value={addressSelector.zipcode || company?.zipcode || ""}
                   readOnly
                   placeholder="ระบบกรอกอัตโนมัติ..."
                   className="bg-muted text-muted-foreground"

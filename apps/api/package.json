@@ -7,7 +7,9 @@
     "build": "bun build ./src/index.ts --outdir ./dist",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
-    "db:seed": "bun src/db/seed.ts"
+    "db:seed": "bun src/db/seed.ts",
+    "db:dump-prod": "bun src/scripts/dump_db_to_seed.ts",
+    "db:seed-prod": "bun src/db/seed_production.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.620.0",
@@ -15,7 +17,9 @@
     "decimal.js": "^10.4.3",
     "drizzle-orm": "^0.32.0",
     "hono": "^4.5.1",
+    "jszip": "^3.10.1",
     "postgres": "^3.4.4",
+    "xlsx-populate": "^1.21.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

@@ -19,10 +19,14 @@ const BASE_URL = "/api";
 export const api = {
   request: async (path: string, options: RequestInit = {}) => {
     const token = useAppStore.getState().token;
+    const activeCompanyId = useAppStore.getState().activeCompanyId || localStorage.getItem("active-company-id");
     
     const headers = new Headers(options.headers);
     if (token) {
       headers.set("Authorization", `Bearer ${token}`);
+    }
+    if (activeCompanyId) {
+      headers.set("x-company-id", activeCompanyId);
     }
     if (!(options.body instanceof FormData) && !headers.has("Content-Type")) {
       headers.set("Content-Type", "application/json");
@@ -64,6 +68,13 @@ export const api = {
       ...options, 
       method: "PUT", 
       body: body instanceof FormData ? body : JSON.stringify(body) 
+    }),
+
+  patch: (path: string, body?: any, options: RequestInit = {}) => 
+    api.request(path, { 
+      ...options, 
+      method: "PATCH", 
+      body: body ? JSON.stringify(body) : undefined 
     }),
 
   delete: (path: string, options: RequestInit = {}) => 

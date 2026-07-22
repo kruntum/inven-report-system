@@ -3,15 +3,20 @@ import { verify } from "hono/jwt";
 
 const JWT_SECRET = (process.env.JWT_SECRET || "aB3_kLm7_nPq9xWz5vR2hT8jYf4cDg6").replace(/['"]/g, "");
 
+import { db } from "../db/connection.ts";
+import { userCompanies } from "../db/schema.ts";
+import { eq, and } from "drizzle-orm";
+
 export interface JWTPayload {
   userId: string;
   roleId: number;
   companyId: string;
   username: string;
   fullName: string;
+  activeCompanyId?: string;
 }
 
-// 1. Core Auth Middleware to verify token and attach user to context
+// 1. Core Auth Middleware to verify token and attach user & active company to context
 export async function authGuard(c: Context, next: Next) {
   const authHeader = c.req.header("Authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -21,9 +26,33 @@ export async function authGuard(c: Context, next: Next) {
   const token = authHeader.substring(7);
   try {
     const payload = await verify(token, JWT_SECRET, "HS256") as any;
-    
-    // Set user payload in Hono context
-    c.set("user", payload);
+    const reqCompanyId = c.req.header("x-company-id");
+
+    let activeCompanyId = payload.companyId;
+
+    if (reqCompanyId) {
+      if (payload.roleId === 1) {
+        // Admin can access any company
+        activeCompanyId = reqCompanyId;
+      } else {
+        // Non-admin: check if user has access to reqCompanyId in user_companies table
+        const hasAccess = await db
+          .select({ id: userCompanies.id })
+          .from(userCompanies)
+          .where(and(
+            eq(userCompanies.userId, payload.userId),
+            eq(userCompanies.companyId, reqCompanyId)
+          ))
+          .limit(1);
+
+        if (hasAccess.length > 0) {
+          activeCompanyId = reqCompanyId;
+        }
+      }
+    }
+
+    c.set("user", { ...payload, companyId: activeCompanyId });
+    c.set("activeCompanyId", activeCompanyId);
     await next();
   } catch (error: any) {
     console.error("JWT Verification failed. Error:", error.message);
