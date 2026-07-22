@@ -1,6 +1,10 @@
 import { Context, Next } from "hono";
 import { verify } from "hono/jwt";
 
+if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
+  throw new Error("FATAL ERROR: JWT_SECRET environment variable is required in production!");
+}
+
 const JWT_SECRET = (process.env.JWT_SECRET || "aB3_kLm7_nPq9xWz5vR2hT8jYf4cDg6").replace(/['"]/g, "");
 
 import { db } from "../db/connection.ts";

@@ -58,8 +58,10 @@ services:
     container_name: inven_api_prod
     restart: always
     environment:
+      NODE_ENV: ${NODE_ENV:-production}
       PORT: 6001
       DATABASE_URL: postgresql://${POSTGRES_USER:-inven_admin}:${POSTGRES_PASSWORD:-Xk9#mPv2_wLq8nR4}@db:5432/${POSTGRES_DB:-inven_report_db}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://coco.tummy.cc}
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio_admin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-Zt7@hNc5!bYf3jW9}
       MINIO_ENDPOINT: http://minio:9000

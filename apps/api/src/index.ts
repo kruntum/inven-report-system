@@ -10,11 +10,25 @@ import companies from "./routes/companies.ts";
 
 const app = new Hono();
 
-// Enable CORS for frontend cross-origin requests
+// Configure CORS for security
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+  : [
+      "https://coco.tummy.cc",
+      "http://localhost:5173",
+      "http://localhost:6000",
+      "http://127.0.0.1:5173",
+      "http://127.0.0.1:6000",
+    ];
+
 app.use("*", cors({
-  origin: "*", // Adjust this in production
+  origin: (origin) => {
+    if (process.env.NODE_ENV !== "production") return origin || "*";
+    if (!origin || allowedOrigins.includes(origin)) return origin;
+    return null;
+  },
   allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowHeaders: ["Content-Type", "Authorization"],
+  allowHeaders: ["Content-Type", "Authorization", "x-company-id"],
 }));
 
 // Root health check endpoint
@@ -22,8 +36,11 @@ app.get("/", (c) => {
   return c.text("Thai Government Inventory Reporting API — Online");
 });
 
-// Temporary endpoint to debug browser errors remotely
+// Temporary endpoint to debug browser errors remotely (disabled in production)
 app.post("/debug-log", async (c) => {
+  if (process.env.NODE_ENV === "production") {
+    return c.json({ success: false, message: "Disabled in production" }, 403);
+  }
   try {
     const body = await c.req.json();
     console.log("\n🚨 [BROWSER CLIENT ERROR] 🚨");
