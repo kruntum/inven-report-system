@@ -81,6 +81,8 @@ services:
       dockerfile: Dockerfile
     container_name: inven_web_prod
     restart: always
+    ports:
+      - "6000:80"
     expose:
       - "80"
     depends_on:
