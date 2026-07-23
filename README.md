@@ -138,10 +138,10 @@ graph TD
     Pangolin -->|Port 6006 Gateway| Proxy[Nginx Central Gateway - inven_proxy_prod]
     
     subgraph Core System Services
-        Proxy -->|1. Route / -> Port 80| Web[Frontend Web Server - inven_web_prod]
-        Proxy -->|2. Route /api -> Port 6001| API[Bun Hono Backend API - inven_api_prod]
-        Proxy -->|3. Route /storage -> Port 9000| MinIO[MinIO Storage Engine - inven_minio_prod]
-        API -->|Port 5432| DB[(PostgreSQL 17 Database - inven_db_prod)]
+        Proxy -->|1. Route / -> Port 80| Web[Frontend Web Server - inven_web_prod (Port 6000)]
+        Proxy -->|2. Route /api -> Port 6001| API[Bun Hono Backend API - inven_api_prod (Port 6001)]
+        Proxy -->|3. Route /storage -> Port 9000| MinIO[MinIO Storage Engine - inven_minio_prod (Port 6007/6008)]
+        API -->|Port 5432| DB[(PostgreSQL 17 Database - inven_db_prod (Port 6009))]
     end
 ```
 
