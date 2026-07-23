@@ -134,13 +134,15 @@
 
 ```mermaid
 graph TD
-    Client[Browser / User] -->|HTTPS| Pangolin[Pangolin / External Reverse Proxy]
-    Pangolin -->|Port 6006| Proxy[Nginx Reverse Proxy Container - inven_proxy_prod]
-    Pangolin -->|Port 6000 Direct| Web[Vite Nginx Web Container - inven_web_prod]
-    Proxy -->|Port 80| Web
-    Proxy -->|Port 6001| API[Bun Hono API Container - inven_api_prod]
-    Proxy -->|Port 9000| MinIO[MinIO Storage Engine - inven_minio_prod]
-    API -->|Port 5432| DB[(PostgreSQL 17 Container - inven_db_prod)]
+    Client[Browser / User] -->|HTTPS| Pangolin[Pangolin Edge Proxy]
+    Pangolin -->|Port 6006 Gateway| Proxy[Nginx Central Gateway - inven_proxy_prod]
+    
+    subgraph Core System Services
+        Proxy -->|1. Route / -> Port 80| Web[Frontend Web Server - inven_web_prod]
+        Proxy -->|2. Route /api -> Port 6001| API[Bun Hono Backend API - inven_api_prod]
+        Proxy -->|3. Route /storage -> Port 9000| MinIO[MinIO Storage Engine - inven_minio_prod]
+        API -->|Port 5432| DB[(PostgreSQL 17 Database - inven_db_prod)]
+    end
 ```
 
 | Container Name | Service | Docker Port | Host Published Port |
