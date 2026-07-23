@@ -84,7 +84,8 @@
 * **File Storage & Export:** AWS S3 SDK (MinIO S3 Compatible), XlsxPopulate, JSZip
 
 ### **DevOps & Infrastructure**
-* **Containers & Proxy:** Docker, Docker Compose, Nginx Reverse Proxy, MinIO Storage Engine, Portainer UI
+* **Edge Proxy & Domain Management:** Pangolin Proxy Manager (Edge TLS/SSL Termination & Authentication Guard)
+* **Containers & Internal Gateway:** Docker, Docker Compose, Nginx Reverse Proxy (Internal Gateway Port 6006), MinIO Storage Engine, Portainer UI
 
 ---
 
@@ -195,6 +196,22 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
 docker compose -f docker-compose.prod.yml exec api bun run db:push
 docker compose -f docker-compose.prod.yml exec api bun run db:seed-prod
 ```
+
+#### C. การตั้งค่า Pangolin Proxy Manager (Edge Reverse Proxy & SSL)
+
+หลังจากการเปิดคอนเทนเนอร์ด้วย Docker Compose บน Server เรียบร้อยแล้ว ให้ทำการเชื่อมต่อโดเมน `https://coco.tummy.cc` ผ่าน **Pangolin Proxy Manager** ดังนี้:
+
+1. **เปิดหน้าจัดการ Resource ใน Pangolin:** กดสร้าง Resource ใหม่ หรือแก้ไข Resource เดิมของโดเมน `coco.tummy.cc`
+2. **แถบ General:**
+   * **Domain:** ระบุเป็น **`https://coco.tummy.cc`** *(ต้องมี `s` / HTTPS)*
+   * **Enable Resource:** เปิดสวิตช์สีส้ม (Enabled)
+3. **แถบ Proxy:**
+   * **Target Address:** ระบุเป็น `http://10.10.10.25:6006` *(หรือ `<SERVER_IP>:6006` พอร์ต Nginx Gateway ของโปรเจกต์)*
+   * **Enable SSL:** **เปิดเป็นสีส้ม (Enabled)** เพื่อให้ Pangolin ผูก SSL Certificate สำหรับโดเมน HTTPS
+   * **Custom Host Header:** **ปล่อยว่างไว้** *(หรือกรอก `localhost` / `coco.tummy.cc`)*
+4. **แถบ Authentication:**
+   * **Authentication Status:** ปรับเป็น **`Not Protected` (สีเหลือง)** *(เนื่องจากระบบแอปพลิเคชันมีระบบยืนยันตัวตน JWT Guard ป้องกันในตัวอยู่แล้ว)*
+5. กดปุ่ม **`Save Targets`** และ **`Save Settings`** เพื่อเปิดใช้งานทันที
 
 ---
 
