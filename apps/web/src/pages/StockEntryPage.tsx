@@ -1,8 +1,7 @@
 import * as React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { Button } from "@/components/ui/button.tsx";
-import { ScrollArea } from "@/components/ui/scroll-area.tsx";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog.tsx";
+import { Dialog, DialogContent } from "@/components/ui/dialog.tsx";
 import { StockTransaction } from "../types/index.ts";
 import { StockEntryForm } from "../components/stock/StockEntryForm.tsx";
 import { StockEntryTable } from "../components/stock/StockEntryTable.tsx";
@@ -58,22 +57,8 @@ export function StockEntryPage() {
         setIsModalOpen(open);
         if (!open) setEditingTx(null);
       }}>
-        <DialogContent className="sm:max-w-[850px] p-0 max-h-[85vh] flex flex-col overflow-hidden">
-          <div className="p-5 pb-2">
-            <DialogHeader>
-              <DialogTitle className="text-base font-extrabold">
-                {editingTx ? (editingTx.id ? "แก้ไขธุรกรรมคลังสินค้า" : "คัดลอกธุรกรรมคลังสินค้า") : "บันทึกธุรกรรมรายวัน"}
-              </DialogTitle>
-              <DialogDescription className="text-xs">
-                กรอกหรือแก้ไขข้อมูลรับซื้อ จำหน่าย หรือปรับปรุงยอด เพื่อลงบัญชีคุมของแต่ละคลังควบคุม
-              </DialogDescription>
-            </DialogHeader>
-          </div>
-          <ScrollArea className="flex-1 px-5 pb-5 overflow-y-auto">
-            <div className="px-0.5 pr-2.5">
-              <StockEntryForm editingTx={editingTx} onSuccess={handleFormSuccess} />
-            </div>
-          </ScrollArea>
+        <DialogContent className="sm:max-w-[850px] p-0 max-h-[85vh] h-[85vh] flex flex-col overflow-hidden">
+          <StockEntryForm editingTx={editingTx} onSuccess={handleFormSuccess} onClose={() => setIsModalOpen(false)} />
         </DialogContent>
       </Dialog>
     </Card>

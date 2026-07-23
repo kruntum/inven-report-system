@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { DatePicker } from "../shared/date-picker.tsx";
 import { toast } from "sonner";
+import { ScrollArea } from "@/components/ui/scroll-area.tsx";
+import { DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog.tsx";
 import { transactionFormSchema } from "../../schemas/index.ts";
 import { StockTransaction, Product, StorageLocation, Partner } from "../../types/index.ts";
 import { QuickPartnerForm } from "./QuickPartnerForm.tsx";
@@ -21,9 +23,10 @@ type TransactionFormValues = z.infer<typeof transactionFormSchema>;
 interface StockEntryFormProps {
   editingTx: StockTransaction | null;
   onSuccess: () => void;
+  onClose?: () => void;
 }
 
-export function StockEntryForm({ editingTx, onSuccess }: StockEntryFormProps) {
+export function StockEntryForm({ editingTx, onSuccess, onClose }: StockEntryFormProps) {
   const queryClient = useQueryClient();
   const [showAddPartner, setShowAddPartner] = React.useState(false);
 
@@ -178,8 +181,23 @@ export function StockEntryForm({ editingTx, onSuccess }: StockEntryFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-1">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-x-3 gap-y-2.5">
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col h-full overflow-hidden">
+      {/* Pinned Header */}
+      <div className="p-5 pb-3 border-b border-border/60 shrink-0 bg-card">
+        <DialogHeader>
+          <DialogTitle className="text-base font-extrabold">
+            {editingTx ? (editingTx.id ? "แก้ไขธุรกรรมคลังสินค้า" : "คัดลอกธุรกรรมคลังสินค้า") : "บันทึกธุรกรรมรายวัน"}
+          </DialogTitle>
+          <DialogDescription className="text-xs">
+            กรอกหรือแก้ไขข้อมูลรับซื้อ จำหน่าย หรือปรับปรุงยอด เพื่อลงบัญชีคุมของแต่ละคลังควบคุม
+          </DialogDescription>
+        </DialogHeader>
+      </div>
+
+      {/* Scrollable Form Content */}
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="p-5 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-x-3 gap-y-2.5">
         
         {/* Row 1 */}
         <div className="space-y-1">
@@ -572,17 +590,32 @@ export function StockEntryForm({ editingTx, onSuccess }: StockEntryFormProps) {
           />
         </div>
 
-        {/* Submit */}
+        </div>
+      </div>
+      </ScrollArea>
+
+      {/* Pinned Footer */}
+      <DialogFooter className="p-4 px-5 border-t border-border/60 bg-muted/20 flex items-center justify-end gap-2 shrink-0">
+        {onClose && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            className="h-8 text-xs px-4 cursor-pointer font-medium"
+          >
+            ยกเลิก
+          </Button>
+        )}
         <Button
           type="submit"
           disabled={createTxMutation.isPending || editTxMutation.isPending}
-          className="w-full md:col-span-3 cursor-pointer font-bold h-8 text-xs mt-1"
+          className="h-8 text-xs px-5 cursor-pointer font-bold bg-primary text-primary-foreground hover:bg-primary/90"
         >
           {createTxMutation.isPending || editTxMutation.isPending 
             ? "กำลังบันทึก..." 
             : (editingTx && editingTx.id ? "บันทึกการแก้ไขรายการ" : "บันทึกรายการบัญชีคุม")}
         </Button>
-      </div>
+      </DialogFooter>
     </form>
   );
 }
