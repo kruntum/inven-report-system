@@ -37,7 +37,7 @@ services:
     entrypoint: |
       /bin/sh -c "
       sleep 3;
-      mc alias set localminio http://minio:9000 minio_admin Zt7_hNc5_bYf3jW9_safe;
+      mc alias set localminio http://minio:9000 $${MINIO_ROOT_USER:-minio_admin} $${MINIO_ROOT_PASSWORD:-Zt7@hNc5!bYf3jW9};
       if ! mc ls localminio/storage-bucket >/dev/null 2>&1; then
         mc mb localminio/storage-bucket;
         mc anonymous set public localminio/storage-bucket;
